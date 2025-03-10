@@ -9,6 +9,10 @@ simple node js API to sort and decorate transaction information
     You should be able to go to [localhost:3000](http://localhost:3000/docs) where you'll be able to see and use the API Reference (SwaggerUI) to query the endpoints.
     The Customer Ids are (1 - 9), so you can just use those.
 
+    The app uses ESM and Modules so I'm using Node v22.10. This version or higher should work fine.
+    If you run into issue please verify your node version. If you use `nvm` running `nvm use` should work
+    as there's an `.nvmrc` file in the repo.
+
 ## How to Run Tests
     - Install dependencies `npm install`
     - Run Tests `npm test`
