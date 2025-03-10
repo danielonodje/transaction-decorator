@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { validateTransactionAmount } from '../../src/utils/transactionFeeValidation.js';
-import { Transaction } from "src/schemas.js";
+import { Transaction } from "../../src/schemas.js";
 
 describe('Transaction Chain Amount Validation', () => {
     test('returns true for an empty transaction list', () => {
