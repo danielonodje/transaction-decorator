@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { createServer } from 'src/server.js';
+import { createServer } from '../../src/server.js';
 import { test, expect, describe, beforeAll, afterAll } from 'vitest';
 import routesPlugin from '../../src/routes.js';
 
