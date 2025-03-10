@@ -1,24 +1,10 @@
 import Fastify, { FastifyServerOptions } from 'fastify';
 
-export function createServer(opts?: FastifyServerOptions) {
+export function createServer(enableLogging = true, serverOpts?: FastifyServerOptions) {
     const server = Fastify({
-        logger: true,
-        ...opts
+        logger: enableLogging,
+        ...serverOpts
     });
-
-    server.get('/', {
-        schema: {
-            description: "Hello Word route",
-            response: {
-                200: {
-                    description: "Success"
-                },
-                default: {
-                    description: "Failed"
-                }
-            }
-        }
-    }, () => 'Hello world!');
 
     return server;
 }

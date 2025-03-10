@@ -9,7 +9,7 @@ describe('Transactions List Plugin', () => {
     let server: FastifyInstance;
 
     beforeAll(async () => {
-        server = await createServer({ logger: false });
+        server = await createServer(false);
         await server.register(transactionsListPlugin);
         await server.ready();
     });
@@ -29,7 +29,7 @@ describe('Transactions List Plugin', () => {
     });
 
     test('should correctly return the transactions list', async () => {
-        const transactions = await server.getTransactions();
+        const transactions = await server.getTransactions(false);
         expect(transactions).toStrictEqual(data);
     });
 
@@ -51,7 +51,7 @@ describe('Transactions List Plugin', () => {
                 clone: () => new Response(JSON.stringify(testData), { status: 200, headers: { 'Content-Type': 'application/json' } })
             } as Response)
         );
-            
+
         const transactions = await server.getTransactions(true);
         expect(transactions).toStrictEqual(testData);
     });
@@ -75,21 +75,20 @@ describe('Transactions List Plugin', () => {
                 clone: () => new Response(JSON.stringify(invalidStatusTestData), { status: 200, headers: { 'Content-Type': 'application/json' } })
             } as Response)
         );
-            
+
         const transactions = await server.getTransactions(true);
         expect(transactions).toHaveLength(1);
         expect(transactions[0].transactionId).toBe(2);
     });
 
-    test('should return an empty array when the external API response fails', async () => {
-        const invalidStatusTestData = [
-            { transactionId: 1, authorizationCode: 'ABC123', transactionDate: '2025-03-09T00:00:00Z', customerId: 456, transactionType: 'WIRE_OUTGOING', transactionStatus: 'INVALID_STATUS', description: 'Test Transaction', amount: 100, metadata: {} }
-        ];
+    test('should fallback to local data when the external API response fails', async () => {
+        const logSpy = vi.spyOn(server.log, 'warn');
 
         vi.spyOn(global, 'fetch').mockRejectedValueOnce(new Error('Mock Network Failure'));
-            
+
         const transactions = await server.getTransactions(true);
-        expect(transactions).toHaveLength(0);
+        expect(transactions).toStrictEqual(data);
+        expect(logSpy).toHaveBeenCalledWith(new Error('Mock Network Failure'), expect.stringContaining('Falling back to local data'));
     });
 
     test('should return an empty array when the external API response does not return a valid JSON Array', async () => {
@@ -99,14 +98,14 @@ describe('Transactions List Plugin', () => {
                 status: 200,
                 statusText: 'OK',
                 headers: new Headers({ 'Content-Type': 'application/json' }),
-                json: () => Promise.resolve({ key: 'value'}),
+                json: () => Promise.resolve({ key: 'value' }),
                 redirected: false,
                 type: 'basic',
                 url: '',
-                clone: () => new Response(JSON.stringify({ key: 'value'}), { status: 200, headers: { 'Content-Type': 'application/json' } })
+                clone: () => new Response(JSON.stringify({ key: 'value' }), { status: 200, headers: { 'Content-Type': 'application/json' } })
             } as Response)
         );
-            
+
         const transactions = await server.getTransactions(true);
         expect(transactions).toHaveLength(0);
     });

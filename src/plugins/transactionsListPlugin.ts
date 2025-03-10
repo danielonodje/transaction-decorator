@@ -1,24 +1,24 @@
-import { FastifyInstance, FastifyPluginOptions } from 'fastify';
+import { FastifyInstance } from 'fastify';
 import data from '../../transactions-v2.1.json' with { type: 'json' };
 import { Transaction, TransactionSchema } from '../schemas.js';
 import fp from 'fastify-plugin';
 
 const TRANSACTIONS_URL = "https://cdn.seen.com/challenge/transactions-v2.1.json";
 
-async function transactionsList(fastify: FastifyInstance, options: FastifyPluginOptions) {
-    fastify.decorate('getTransactions', async function getTransactions(callExternalAPI = false): Promise<Transaction[]> {
-        const transactionData = callExternalAPI ? await getTransactionsExternal() : data;
+async function transactionsList(fastify: FastifyInstance) {
+    fastify.decorate('getTransactions', async function getTransactions(callExternalAPI = true): Promise<Transaction[]> {
+        const transactionData = await getTransactionsExternal(callExternalAPI);
     
         return validateTransactions(transactionData);
     })
     
-    function validateTransactions(transactionData: any): Transaction[] {
+    function validateTransactions(transactionData: unknown): Transaction[] {
         const output: Transaction[] = [];
     
         if (!Array.isArray(transactionData)) return output;
     
-        for (let transaction of transactionData) {
-            let validationResult = TransactionSchema.safeParse(transaction);
+        for (const transaction of transactionData) {
+            const validationResult = TransactionSchema.safeParse(transaction);
             if (validationResult.success) {
                 output.push(transaction as Transaction);
             } else {
@@ -29,22 +29,22 @@ async function transactionsList(fastify: FastifyInstance, options: FastifyPlugin
         return output;
     }
     
-    async function getTransactionsExternal(): Promise<any> {
+    async function getTransactionsExternal(callExternalAPI: boolean): Promise<unknown> {
+        if (!callExternalAPI) return data;
         try {
             const response = await fetch(TRANSACTIONS_URL);
             const contentType = response.headers.get('content-type');
             if (response && response.ok && contentType?.includes('application/json')) {
                 return response.json();
             }
-            fastify.log.warn(`Unexpected response from ${TRANSACTIONS_URL}: ${response.status} ${response.statusText}`);
-            return [];
+            fastify.log.warn(`Unexpected response from ${TRANSACTIONS_URL}: ${response.status} ${response.statusText}. Falling back to local data`);
+            return data;
         } catch (err) {
-            fastify.log.warn(err, `Failed to fetch transactions at: ${TRANSACTIONS_URL}`);
-            return [];
+            fastify.log.warn(err, `Failed to fetch transactions at: ${TRANSACTIONS_URL}. Falling back to local data`);
+            return data;
         }
     }
 }
-const transactionsListPlugin = fp(transactionsList);
 
-export default transactionsListPlugin;
+export default fp(transactionsList);
 

@@ -1,11 +1,13 @@
 import { FastifyInstance } from 'fastify';
 import { createServer } from 'src/server.js';
 import { test, expect, describe, beforeAll, afterAll } from 'vitest';
+import routesPlugin from '../../src/routes.js';
 
 describe('Hello World API endpoint', () => {
     let server: FastifyInstance;
     beforeAll(async () => {
         server = await createServer();
+        await server.register(routesPlugin);
         await server.ready();
     });
 
